@@ -1,15 +1,8 @@
 ﻿namespace Emby.Jimaku
 {
-    using System.ComponentModel;
-
     using Emby.Web.GenericEdit;
     using Emby.Web.GenericEdit.Elements;
-    using Emby.Web.GenericEdit.Validation;
-
-    using MediaBrowser.Model.Attributes;
-    using MediaBrowser.Model.GenericEdit;
-    using MediaBrowser.Model.Logging;
-    using MediaBrowser.Model.MediaInfo;
+    using System.ComponentModel;
 
     public class PluginOptions : EditableOptionsBase
     {

@@ -1,7 +1,5 @@
 ﻿using Emby.Jimaku.Model;
-using EmbyPluginUiDemo;
 using EmbyPluginUiDemo.Jimaku;
-using MediaBrowser.Common;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Providers;
@@ -10,7 +8,6 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MediaBrowser.Model.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -59,7 +56,7 @@ namespace Emby.Jimaku
             var result = new List<RemoteSubtitleInfo>();
 
             logger.Info(json.SerializeToString(request));
-            var search = await jimakuApiClient.SearchByAnilistID(request.SeriesProviderIds["AniList"]);
+            var search = await jimakuApiClient.SearchByTVDB_ID(request.SeriesProviderIds["TVDB"], request.ParentIndexNumber);
 
             var files = await jimakuApiClient.GetFilesFromSearch(search[0], request.IndexNumber.Value);
 

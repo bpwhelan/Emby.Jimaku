@@ -4,20 +4,14 @@
 
 namespace Emby.Jimaku
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-
-    using EmbyPluginUiDemo.UI;
-    using EmbyPluginUiDemo.UI.Basics;
-    using MediaBrowser.Common;
     using MediaBrowser.Common.Plugins;
     using MediaBrowser.Controller;
     using MediaBrowser.Controller.Plugins;
     using MediaBrowser.Model.Drawing;
     using MediaBrowser.Model.Logging;
     using MediaBrowser.Model.Plugins;
-    using MediaBrowser.Model.Plugins.UI;
+    using System;
+    using System.IO;
 
     /// <summary>
     /// The plugin.
@@ -92,6 +86,7 @@ namespace Emby.Jimaku
 
         protected override void OnOptionsSaved(PluginOptions options)
         {
+            Plugin.Options = options;
             this.logger.Info("My plugin ({0}) options have been updated.", this.Name);
         }
 

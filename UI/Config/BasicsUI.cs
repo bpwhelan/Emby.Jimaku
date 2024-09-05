@@ -4,10 +4,9 @@
 
 namespace EmbyPluginUiDemo.UI.Basics
 {
-    using System.ComponentModel;
-
     using Emby.Web.GenericEdit;
     using Emby.Web.GenericEdit.Elements;
+    using System.ComponentModel;
 
     public class BasicsUI : EditableOptionsBase
     {

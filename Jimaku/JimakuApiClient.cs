@@ -1,20 +1,16 @@
-﻿using MediaBrowser.Common.Net;
+﻿
+using Emby.Jimaku;
+using Emby.Jimaku.Model;
+using MediaBrowser.Common.Net;
+using MediaBrowser.Controller.Subtitles;
+using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http.Headers;
 using System.Net.Http;
-using System.Text;
+using System.Reflection;
 using System.Threading.Tasks;
-using MediaBrowser.Model.Logging;
-using Emby.Jimaku.Model;
-using MediaBrowser.Controller.Subtitles;
-using MediaBrowser.Controller.Entities.TV;
-using System.IO.Pipes;
-using MediaBrowser.Common.Configuration;
-using Emby.Jimaku;
-using MediaBrowser.Common;
 
 namespace EmbyPluginUiDemo.Jimaku
 {
@@ -31,32 +27,38 @@ namespace EmbyPluginUiDemo.Jimaku
             this.json = jsonSerializer;
             this.logger = logger;
             this.config = Plugin.Options;
+            
         }
 
         public async Task<List<JimakuSearch>> SearchByAnilistID(String anilist_id)
         {
-            // Set up the request
-            var request = new HttpRequestOptions
-            {
-                Url = $"https://jimaku.cc/api/entries/search?anilist_id={anilist_id}"
-            };
-
-            // Add the Authorization header
-            request.RequestHeaders.Add("Authorization", config.ApiKey);
-
+            HttpRequestOptions requestOptions = GetRequestOptions();
+            requestOptions.Url = $"https://jimaku.cc/api/entries/search?anilist_id={anilist_id}";
 
             try
             {
-                // Send the request and get the response
-                var response = await httpClient.SendAsync(request, HttpMethod.Get.ToString());
+                var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
+                var search = json.DeserializeFromStream<List<JimakuSearch>>(response.Content);
 
-                // Read the content as a string
-                var responseBody = response.Content;
+                return search;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"Request error: {e.Message}");
+                return null;
+            }
+        }
 
+        public async Task<List<JimakuSearch>> SearchByTVDB_ID(String tvdb_id, int? season)
+        {
+            HttpRequestOptions requestOptions = GetRequestOptions();
+            var anilist_id = await TVDBToAnilistHelper.GetAnilistIdFromSeason(tvdb_id, season);
+            requestOptions.Url = $"https://jimaku.cc/api/entries/search?anilist_id={anilist_id}";
 
-                var search = json.DeserializeFromStream<List<JimakuSearch>>(responseBody);
-
-                logger.Info(json.SerializeToString(search));
+            try
+            {
+                var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
+                var search = json.DeserializeFromStream<List<JimakuSearch>>(response.Content);
 
                 return search;
             }
@@ -69,26 +71,14 @@ namespace EmbyPluginUiDemo.Jimaku
 
         public async Task<List<JimakuFile>> GetFilesFromSearch(JimakuSearch search, int episode)
         {
-            // Set up the request
-            var request = new HttpRequestOptions
-            {
-                Url = $"https://jimaku.cc/api/entries/{search.Id}/files?episode={episode}"
-            };
-
-            // Add the Authorization header
-            request.RequestHeaders.Add("Authorization", config.ApiKey);
-
+            HttpRequestOptions requestOptions = GetRequestOptions();
+            requestOptions.Url = $"https://jimaku.cc/api/entries/{search.Id}/files?episode={episode}";
 
             try
             {
-                // Send the request and get the response
-                var response = await httpClient.SendAsync(request, HttpMethod.Get.ToString());
+                var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
 
-                // Read the content as a string
-                var responseBody = response.Content;
-
-
-                var files = json.DeserializeFromStream<List<JimakuFile>>(responseBody);
+                var files = json.DeserializeFromStream<List<JimakuFile>>(response.Content);
 
                 logger.Info(json.SerializeToString(files));
 
@@ -106,17 +96,10 @@ namespace EmbyPluginUiDemo.Jimaku
             logger.Info(json.SerializeToString(file));
             try
             {
-                var request = new HttpRequestOptions
-                {
-                    Url = file.Url
-                };
+                HttpRequestOptions requestOptions = GetRequestOptions();
+                requestOptions.Url = file.Url;
 
-                logger.Info(json.SerializeToString(request));
-
-                var response = await httpClient.SendAsync(request, HttpMethod.Get.ToString());
-
-                // Get the file stream from the response
-                var fileStream = response.Content;
+                var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
 
                 // Extract the file extension from the URL (assuming the file extension is in the URL)
                 var fileExtension = Path.GetExtension(file.Url).TrimStart('.'); // Removes the '.' from extension
@@ -127,9 +110,6 @@ namespace EmbyPluginUiDemo.Jimaku
 
                 logger.Info($"Downloading {fileExtension}");
 
-                logger.Info(response.Content.ToString());
-
-                // Return the file stream and the file extension as the file type
                 return new SubtitleResponse
                 {
                     Format = fileExtension,
@@ -147,6 +127,17 @@ namespace EmbyPluginUiDemo.Jimaku
                     Language = "jpn"
                 };
             }
+        }
+
+        private HttpRequestOptions GetRequestOptions()
+        {
+            HttpRequestOptions requestOptions = new HttpRequestOptions();
+            var infoVersion = Assembly.GetExecutingAssembly()?
+              .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+              .InformationalVersion;
+            requestOptions.UserAgent = $"Emby.Jimaku.{infoVersion}";
+            requestOptions.RequestHeaders.Add("Authorization", config.ApiKey);
+            return requestOptions;
         }
     }
 }
