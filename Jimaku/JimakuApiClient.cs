@@ -94,18 +94,18 @@ namespace EmbyPluginUiDemo.Jimaku
             }
         }
 
-        public async Task<SubtitleResponse> DownloadFileAsync(JimakuFile file)
+        public async Task<SubtitleResponse> DownloadFileAsync(string fileUrl)
         {
-            logger.Info(json.SerializeToString(file));
+            logger.Info(json.SerializeToString(fileUrl));
             try
             {
                 HttpRequestOptions requestOptions = GetRequestOptions();
-                requestOptions.Url = file.Url;
+                requestOptions.Url = fileUrl;
 
                 var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
 
                 // Extract the file extension from the URL (assuming the file extension is in the URL)
-                var fileExtension = Path.GetExtension(file.Url).TrimStart('.'); // Removes the '.' from extension
+                var fileExtension = Path.GetExtension(fileUrl).TrimStart('.'); // Removes the '.' from extension
 
                 MemoryStream fileData = new MemoryStream();
                 await response.Content.CopyToAsync(fileData);

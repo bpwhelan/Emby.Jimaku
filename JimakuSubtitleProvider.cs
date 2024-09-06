@@ -45,9 +45,10 @@ namespace Emby.Jimaku
 
         public async Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
         {
+            id = id.Replace(" ", string.Empty);
             byte[] decodedBytes = Convert.FromBase64String(id);
-            var str = Encoding.UTF8.GetString(decodedBytes);
-            var file = json.DeserializeFromString<JimakuFile>(str);
+            var str = Encoding.Unicode.GetString(decodedBytes);
+            var file = json.DeserializeFromString<string>(str);
 
             return await jimakuApiClient.DownloadFileAsync(file);
         }
@@ -70,7 +71,7 @@ namespace Emby.Jimaku
                 var fileExtension = Path.GetExtension(file.Url).TrimStart('.'); // Removes the '.' from extension
                 result.Add(new RemoteSubtitleInfo
                 {
-                    Id = Convert.ToBase64String(Encoding.UTF8.GetBytes(json.SerializeToString(file))),
+                    Id = Convert.ToBase64String(Encoding.Unicode.GetBytes(json.SerializeToString(file.Url))),
                     Name = file.Name,
                     ProviderName = Plugin.PluginName,
                     Language = "jpn",
