@@ -33,7 +33,7 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(GITHUB_ACTIONS)' != 'true'">
     <Exec Command="copy $(TargetPath) %AppData%\Emby-Server\programdata\plugins\" />
   </Target>
 
