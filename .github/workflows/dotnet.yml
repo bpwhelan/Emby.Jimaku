@@ -23,6 +23,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ./EmbyPluginUiDemo.sln
     - name: Build
-      run: dotnet build ./Emby.Jimaku.csproj--no-restore
+      run: dotnet build ./Emby.Jimaku.csproj --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
