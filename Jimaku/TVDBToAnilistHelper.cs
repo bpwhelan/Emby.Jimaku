@@ -30,7 +30,7 @@ namespace EmbyPluginUiDemo.Jimaku
             
             foreach (var match in tvdbMatched)
             {   
-                if (match.tvdb_season == request.ParentIndexNumber)
+                if (match.tvdb_season == request.ParentIndexNumber || match.tvdb_season == -1)
                 {
                     if (match.tvdb_epoffset != 0 && request.IndexNumber > match.tvdb_epoffset)
                     {
