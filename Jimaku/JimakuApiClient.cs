@@ -49,24 +49,27 @@ namespace EmbyPluginUiDemo.Jimaku
             }
         }
 
-        public async Task<List<JimakuSearch>> SearchByTVDB_ID(String tvdb_id, int? season)
+        public async Task<List<JimakuSearch>> SearchByTVDB_ID(SubtitleSearchRequest request, int? season)
         {
             HttpRequestOptions requestOptions = GetRequestOptions();
-            var anilist_id = await TVDBToAnilistHelper.GetAnilistIdFromSeason(tvdb_id, season);
-            requestOptions.Url = $"https://jimaku.cc/api/entries/search?anilist_id={anilist_id}";
-
+            var anilist_ids = await TVDBToAnilistHelper.GetAnilistIdFromSeason(request, season, json,httpClient);
+            List<JimakuSearch> searches = new List<JimakuSearch>();
             try
             {
-                var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
-                var search = json.DeserializeFromStream<List<JimakuSearch>>(response.Content);
-
-                return search;
+                foreach (var anilist_id in anilist_ids)
+                {
+                    requestOptions.Url = $"https://jimaku.cc/api/entries/search?anilist_id={anilist_id}";
+                    var response = await httpClient.SendAsync(requestOptions, HttpMethod.Get.ToString());
+                    var search = json.DeserializeFromStream<List<JimakuSearch>>(response.Content);
+                    searches.AddRange(search);
+                }
             }
             catch (HttpRequestException e)
             {
                 Console.WriteLine($"Request error: {e.Message}");
                 return null;
             }
+            return searches;
         }
 
         public async Task<List<JimakuFile>> GetFilesFromSearch(JimakuSearch search, int episode)

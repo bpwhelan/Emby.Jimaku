@@ -1,17 +1,12 @@
-﻿using Emby.Jimaku;
-using Emby.Jimaku.Model;
-using EmbyPluginUiDemo.Jimaku;
+﻿using Emby.Jimaku.Model;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Subtitles;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace EmbyPluginUiDemo.Jimaku
@@ -19,17 +14,42 @@ namespace EmbyPluginUiDemo.Jimaku
     internal static class TVDBToAnilistHelper
     {
 
-        public static async Task<String> GetAnilistIdFromSeason(String TVDBID, int? season)
+        public static async Task<List<String>> GetAnilistIdFromSeason(SubtitleSearchRequest request, int? season, IJsonSerializer json, IHttpClient httpClient)
         {
-            List<TVDBToAnilistMapping> mappings = await GetMappingsFromCsvAsync("https://raw.githubusercontent.com/noggl/AniListToTVDB/main/mapping.csv");
+            List<MediaMapping> mappings = await GetMappingsFromJsonAsync("https://raw.githubusercontent.com/Kometa-Team/Anime-IDs/master/anime_ids.json", json, httpClient);
+            List<MediaMapping> tvdbMatched = new List<MediaMapping>();
             foreach (var mapping in mappings)
             {
-                if (mapping.Season == season && mapping.TVDBID.ToString() == TVDBID)
+                if (mapping.tvdb_id.ToString() == request.SeriesProviderIds["TVDB"])
                 {
-                    return mapping.AniListID.ToString();
+                    tvdbMatched.Add(mapping);
                 }
             }
-            return null;
+
+            List<String> ret = new List<String>();
+            
+            foreach (var match in tvdbMatched)
+            {   
+                if (match.tvdb_season == request.ParentIndexNumber)
+                {
+                    if (match.tvdb_epoffset != 0 && request.IndexNumber > match.tvdb_epoffset)
+                    {
+                        ret = new List<String> { match.anilist_id.ToString() };
+                        break;
+                    } else if (match.tvdb_epoffset == 0)
+                    {
+                        ret = new List<String> { match.anilist_id.ToString() };
+                    }
+                }
+            }
+            return ret;
+        }
+
+        public static async Task<List<MediaMapping>> GetMappingsFromJsonAsync(string url, IJsonSerializer json, IHttpClient httpClient)
+        {
+            var httpOptions = new HttpRequestOptions{ Url = url };
+            var response = await httpClient.Get(httpOptions);
+            return new List<MediaMapping>(json.DeserializeFromStream<Dictionary<string, MediaMapping>>(response).Values);
         }
 
         public static async Task<List<TVDBToAnilistMapping>> GetMappingsFromCsvAsync(string url)

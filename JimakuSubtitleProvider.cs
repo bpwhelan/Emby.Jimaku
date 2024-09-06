@@ -56,9 +56,13 @@ namespace Emby.Jimaku
             var result = new List<RemoteSubtitleInfo>();
 
             logger.Info(json.SerializeToString(request));
-            var search = await jimakuApiClient.SearchByTVDB_ID(request.SeriesProviderIds["TVDB"], request.ParentIndexNumber);
+            var searches = await jimakuApiClient.SearchByTVDB_ID(request, request.ParentIndexNumber);
 
-            var files = await jimakuApiClient.GetFilesFromSearch(search[0], request.IndexNumber.Value);
+            List<JimakuFile> files = new List<JimakuFile>();
+            foreach (var search in searches)
+            {
+                files.AddRange(await jimakuApiClient.GetFilesFromSearch(search, request.IndexNumber.Value));
+            }
 
             foreach (var file in files)
             {
