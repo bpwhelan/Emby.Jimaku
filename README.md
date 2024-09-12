@@ -109,7 +109,11 @@ Yes, the Jimaku.cc service provides subtitles for a variety of content, not just
 
 ---
 
-## Support
+## Contact
 
-If you encounter any issues with the plugin or need further assistance, feel free to open an issue on the GitHub repository. You can also check the Emby forums for community support.
+If you run into issues find me on discord @Beangate, or make an issue here. I've used this process to generate ~150 cards from Dragon Quest XI so far and it's worked quite well.
+
+## Donations
+
+If you've benefited from this or any of my other projects, please consider supporting my work via [Github Sponsors](https://github.com/sponsors/bpwhelan) or [Ko-fi.](https://ko-fi.com/beangate)
 
