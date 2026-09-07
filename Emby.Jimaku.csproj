@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
 	<Version>1.0.1</Version>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -10,6 +10,9 @@
     <ProductVersion>4.8.0.0</ProductVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Shared/**/*.cs;Jellyfin.Jimakufin/**/*.cs;Tests/**/*.cs;Model/**/*.cs" />
+    <EmbeddedResource Remove="Shared/**/*;Jellyfin.Jimakufin/**/*;Tests/**/*" />
+    <ProjectReference Include="Shared/Jimaku.Shared.csproj" />
     <None Remove="jimaku.png" />
   </ItemGroup>
   <ItemGroup>
@@ -33,8 +36,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(GITHUB_ACTIONS)' != 'true'">
-    <Exec Command="copy $(TargetPath) %AppData%\Emby-Server\programdata\plugins\" />
+  <Target Name="PostBuild" AfterTargets="Build" Condition="'$(DeployToEmby)' == 'true'">
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)Jimaku.Shared.dll" DestinationFolder="$(APPDATA)/Emby-Server/programdata/plugins/" />
   </Target>
 
 </Project>

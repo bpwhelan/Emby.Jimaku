@@ -1,119 +1,102 @@
-# Jimaku.cc Subtitle Plugin for Emby
+# Jimakufin
 
-This Emby plugin integrates Jimaku.cc as a subtitle provider, allowing users to fetch subtitles for their media library directly from Jimaku.cc.
+Fetch Japanese episode subtitles from [Jimaku.cc](https://jimaku.cc) in Emby or Jellyfin.
 
-## Table of Contents
+## Install from the Jellyfin catalog
 
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-   - [Download and Copy the DLL](#download-and-copy-the-dll)
-   - [Signing Up for a Jimaku.cc Account and Getting an API Key](#signing-up-for-a-jimakucc-account-and-getting-an-api-key)
-   - [Configuring the Plugin in Emby](#configuring-the-plugin-in-emby)
-3. [Usage](#usage)
-4. [Images](#images)
-5. [FAQ](#faq)
-6. [Support](#support)
+After the first Jimakufin release is published, open **Dashboard → Plugins → Repositories → Add** and enter:
 
----
+- **Name:** Jimakufin
+- **Repository URL:** `https://github.com/bpwhelan/Emby.Jimaku/releases/latest/download/manifest.json`
 
-## Prerequisites
+Open **Catalog**, install **Jimakufin**, then restart Jellyfin. Enter your API key under **Dashboard → Plugins → Jimakufin** and enable **Jimakufin** with **Japanese** in your TV library's subtitle settings.
 
-- An [Emby](https://emby.media/) server installation.
-- A Jimaku.cc account with an API key.
-- The Jimaku.cc plugin DLL file for Emby.
+The release workflow maintains this manifest alongside the exact ZIP it describes. The URL becomes usable once a release containing these assets exists; checking in the JSON alone does not publish the plugin ZIP.
+
+The GitHub repository is currently named `Emby.Jimaku`. **Jimakufin** is the new project/catalog name. If you rename the GitHub repository to `Jimakufin`, use `https://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json` instead. The workflow derives release URLs from the repository running it.
+
+## Supported servers
+
+| Server | Project | Target |
+| --- | --- | --- |
+| Emby 4.8 | `Emby.Jimaku.csproj` | .NET Standard 2.0; existing Emby plugin ID and settings retained |
+| Jellyfin 10.11.x | `Jellyfin.Jimakufin/Jellyfin.Jimakufin.csproj` | .NET 9; Jellyfin API 10.11.0 |
+
+The two plugins use `Shared/Jimaku.Shared.csproj` for Jimaku requests, TVDB-to-AniList mapping, subtitle IDs, and downloads. Server dependencies and configuration pages remain in their respective projects. Jellyfin 10.10 and earlier are not targeted by this build.
 
 ## Installation
 
-### 1. Download and Copy the DLL
+1. Download the ZIP for your server from this project's releases, or build it using the instructions below.
+2. Stop the server and extract **both DLLs** from the ZIP into the plugin location:
+   - **Emby:** the `plugins` folder inside your server's program data directory. On a typical Windows installation this is `%APPDATA%/Emby-Server/programdata/plugins/`.
+   - **Jellyfin:** create a `Jimaku` folder inside your server's `plugins` directory, then extract there. For example, `/var/lib/jellyfin/plugins/Jimaku/` on Linux or `/config/plugins/Jimaku/` with the standard Docker configuration mount.
+3. Restart the server.
+4. Open **Dashboard → Plugins → Jimakufin** (or **Jimaku** in Emby), enter your Jimaku API key, and save.
+5. In your TV library's subtitle settings, enable that provider and select **Japanese** as a subtitle download language.
 
-1. **Download the Plugin DLL**: You can download the compiled plugin DLL from the release page of this project.
-   
-2. **Copy the DLL to the Emby Plugins Folder**:
-   - Navigate to your Emby installation folder.
-   - Locate the `plugins` folder.
-   - Copy the downloaded DLL file into this folder.
-   
-   Example path on a typical Emby server installation:
-   - **Windows**: `C:\Users\[YourUsername]\AppData\Roaming\Emby-Server\plugins\`
-   - **Linux**: `/var/lib/emby/plugins/`
-   - **macOS**: `/Users/[YourUsername]/.config/emby-server/plugins/`
+Each ZIP contains its server's plugin DLL plus `Jimaku.Shared.dll`. When upgrading an existing Emby installation, add the shared DLL alongside the replacement `Emby.Jimaku.dll`. Install only the ZIP matching your server; do not copy build-time `MediaBrowser.*` or `Jellyfin.*` SDK dependencies into the plugins folder.
 
-3. **Restart the Emby Server**: After copying the plugin DLL file, restart the Emby server to load the new plugin.
+See Jellyfin's [plugin installation documentation](https://jellyfin.org/docs/general/server/plugins/) for locating its plugin directory.
 
-### 2. Signing Up for a Jimaku.cc Account and Getting an API Key
+## Jimaku API key
 
-1. **Go to Jimaku.cc**: Visit [Jimaku.cc](https://jimaku.cc) and sign up for an account.
-   
-2. **Generate Your API Key**:
-   - After signing in, go to your account settings page.
-   - Navigate to the "API" section.
-   - Click the button to generate a new API key.
-   
-3. **Copy Your API Key**: Make sure to copy the key, as it will be used in the next steps to configure the plugin.
+Create an account at [Jimaku.cc](https://jimaku.cc), open your account settings, and generate an API key. Paste it into the plugin configuration. Saved key changes apply to subsequent API requests without a server restart.
 
-### 3. Configuring the Plugin in Emby
+## Usage and matching
 
-1. **Open Emby**: Log into your Emby dashboard.
-   
-2. **Navigate to Plugins Settings**:
-   - Go to `Settings > Plugins`.
-   - You should see the Jimaku.cc plugin listed under installed plugins.
-   
-3. **Add Your API Key**:
-   - Click on the Jimaku.cc plugin to open the configuration page.
-   - You will see a field where you can paste your Jimaku.cc API key.
-   - Paste your key and save the configuration.
-   
-4. **Enable Jimaku.cc Subtitles**: Ensure that Jimaku.cc is enabled as a subtitle provider in your Emby settings.
+Use the server's subtitle search for an episode, or its scheduled subtitle download task. The plugin returns Japanese subtitles when Jimaku has a matching entry and episode.
 
----
+Matching requires a **TVDB ID on the parent series**, a season number, and an episode number. The shared client uses [Kometa's Anime-IDs mappings](https://github.com/Kometa-Team/Anime-IDs) to find the AniList ID. Jellyfin resolves the parent series from the library episode's media path; the episode's own TVDB ID is not used as a series ID.
 
-## Usage
+For split seasons, the mapping's episode offset is subtracted before searching Jimaku. Missing metadata, absent mappings, and requests for other languages return no results. Network and authentication errors are reported to the server. Movies and title-only searches are not currently supported.
 
-Once you’ve installed and configured the Jimaku.cc plugin, subtitles will automatically be fetched for your media content when available. You can also manually search for subtitles through the Emby interface.
+## Build and test
 
-To manually fetch subtitles:
-1. Open your media in Emby.
-2. Select `Subtitles` from the playback menu.
-3. Click `Search for Subtitles` and Jimaku.cc will be used to retrieve them.
+Install the .NET 9 SDK (or a newer SDK with .NET 9 runtime available for tests).
 
----
+```powershell
+dotnet build Jimakufin.sln -c Release
+dotnet test Tests/Jimaku.Tests.csproj -c Release --no-build
+pwsh ./scripts/package.ps1 -NoBuild
+```
 
-### 1. Plugin Installation Location
+Packages are written to `artifacts/Emby.Jimaku.zip` and `artifacts/Jellyfin.Jimakufin.zip`. GitHub Actions builds both plugins, runs the tests, and uploads separate packages.
 
-![image](https://github.com/user-attachments/assets/3d780b7f-828d-43d6-a938-25e14da6bd45)
+Ordinary builds do not install anything. To explicitly copy the Emby plugin and shared DLL to the local Windows Emby installation:
 
----
+```powershell
+dotnet build Emby.Jimaku.csproj -c Release -p:DeployToEmby=true
+```
 
-### 2. API Key Configuration
+The tests use simulated HTTP responses to check mapping, episode offsets, language and metadata filtering, API key changes, legacy subtitle IDs, downloads, errors, and cancellation. A live server and Jimaku account are needed to validate loading, the settings page, and end-to-end downloads in your installation.
 
-![image](https://github.com/user-attachments/assets/1aa887bc-740b-49b8-a303-82dc545aec7d)
+## Publishing releases and the repository JSON
 
----
+The checked-in `manifest.json` is a Jellyfin repository catalog with the plugin GUID, four-part version, minimum Jellyfin ABI, release ZIP URL, and MD5 checksum. The GUID stays unchanged when the project is renamed, so Jellyfin recognizes future versions as updates. Its initial entry describes the locally generated `v1.0.1` package; that release is not published by these scripts.
 
-### 3. Subtitle Search in Emby
+For automated releases:
 
-![image](https://github.com/user-attachments/assets/05262f1c-3249-489e-bd7a-23028aee899b)
+1. Set the Jellyfin project's `Version` (currently `1.0.1`) and commit the changes.
+2. Publish a stable GitHub release with a matching tag, such as `v1.0.1` or `1.0.1`.
+3. The release workflow builds/tests both plugins and uploads `Emby.Jimaku.zip`, `Jellyfin.Jimakufin.zip`, and `manifest.json`. Wait for that workflow to finish before installing.
 
----
+The recommended repository URL above always serves the latest release's generated manifest and needs no automated commits to your default branch. To keep the checked-in snapshot synchronized, download `manifest.json` from the release and commit it. This also preserves older version entries in subsequent releases.
 
-## FAQ
+If you prefer a repository URL pointing directly to the checked-in file, use `https://raw.githubusercontent.com/bpwhelan/Emby.Jimaku/main/manifest.json`. Keep that file synchronized with the published release's manifest; a stale checksum prevents installation. Update the repository segment if you rename it.
 
-### How do I regenerate my API key?
+For a manual release, build/package once, then generate the catalog from the **exact ZIP you will upload**:
 
-If you need to regenerate your Jimaku.cc API key, go to the API section of your Jimaku.cc account and click the "Regenerate API Key" button. Make sure to update your Emby plugin with the new key.
+```powershell
+pwsh ./scripts/package.ps1
+pwsh ./scripts/update-manifest.ps1 -Tag v1.0.1
+```
 
-### Can I use this plugin for non-anime media?
+Upload `artifacts/Jellyfin.Jimakufin.zip`, `artifacts/Emby.Jimaku.zip`, and the generated root `manifest.json` to that tag's release, then check in `manifest.json`. Do not rebuild or repackage the ZIP afterward without regenerating the manifest. Use `-Repository bpwhelan/Jimakufin` when preparing URLs for a renamed repository before updating the local Git remote. The script validates the tag against the project version and retains older catalog versions.
 
-Yes, the Jimaku.cc service provides subtitles for a variety of content, not just anime. If subtitles exist on Jimaku.cc for your media, they will be fetched accordingly.
+The manifest format follows Jellyfin's [plugin repository documentation](https://jellyfin.org/posts/plugin-updates/).
 
----
+## Support
 
-## Contact
+Open a GitHub issue or contact @Beangate on Discord.
 
-If you run into issues find me on discord @Beangate, or make an issue here. I've used this process to generate ~150 cards from Dragon Quest XI so far and it's worked quite well.
-
-## Donations
-
-If you've benefited from this or any of my other projects, please consider supporting my work via [Github Sponsors](https://github.com/sponsors/bpwhelan) or [Ko-fi.](https://ko-fi.com/beangate)
-
+If this plugin helps you, consider supporting the work through [GitHub Sponsors](https://github.com/sponsors/bpwhelan) or [Ko-fi](https://ko-fi.com/beangate).

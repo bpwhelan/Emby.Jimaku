@@ -1,0 +1,20 @@
+[
+  {
+    "guid": "7fafdaef-3f55-4fd7-b14d-bbfcdaa801ee",
+    "name": "Jimakufin",
+    "description": "Japanese episode subtitles from Jimaku.cc, matched using TVDB and AniList metadata. Requires a Jimaku API key.",
+    "overview": "Japanese subtitles from Jimaku.cc",
+    "owner": "bpwhelan",
+    "category": "Subtitles",
+    "versions": [
+      {
+        "version": "1.0.1.0",
+        "changelog": "Initial Jellyfin 10.11 support with shared Jimaku subtitle matching and downloads.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/bpwhelan/Emby.Jimaku/releases/download/v1.0.1/Jellyfin.Jimakufin.zip",
+        "checksum": "6fb120c1be5ee653efece5935808f8ab",
+        "timestamp": "2026-09-07T02:38:55Z"
+      }
+    ]
+  }
+]

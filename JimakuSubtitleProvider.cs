@@ -1,88 +1,53 @@
-﻿using Emby.Jimaku.Model;
-using EmbyPluginUiDemo.Jimaku;
-using MediaBrowser.Common.Configuration;
-using MediaBrowser.Common.Net;
+using Jimaku.Shared;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Subtitles;
-using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace Emby.Jimaku
 {
-    internal class JimakuSubtitleProvider : ISubtitleProvider, IHasOrder
+    public class JimakuSubtitleProvider : ISubtitleProvider, IHasOrder
     {
-        private readonly IHttpClient httpClient;
-        private readonly IFileSystem fileSystem;
-        private readonly IApplicationPaths appPaths;
-        private readonly IJsonSerializer json;
-        private readonly ILogger logger;
-        private readonly JimakuApiClient jimakuApiClient;
-
+        private static readonly HttpClient Http = new HttpClient();
+        private readonly JimakuClient client;
+        public JimakuSubtitleProvider(IJsonSerializer json)
+        {
+            client = new JimakuClient(Http, new JsonCodec(json), () => Plugin.Options.ApiKey);
+        }
         public string Name => Plugin.PluginName;
-
-        public IEnumerable<VideoContentType> SupportedMediaTypes => new List<VideoContentType> { VideoContentType.Episode };
-
+        public IEnumerable<VideoContentType> SupportedMediaTypes => new[] { VideoContentType.Episode };
         public int Order => 1;
-
-        public JimakuSubtitleProvider(IHttpClient httpClient, IFileSystem fileSystem, IApplicationPaths appPaths, IJsonSerializer json, ILogger logger)
-        {
-            this.httpClient = httpClient;
-            this.fileSystem = fileSystem;
-            this.appPaths = appPaths;
-            this.json = json;
-            this.logger = logger;
-            this.jimakuApiClient = new JimakuApiClient(httpClient, json, logger);
-        }
-
-        public async Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
-        {
-            id = id.Replace(" ", string.Empty);
-            byte[] decodedBytes = Convert.FromBase64String(id);
-            var str = Encoding.Unicode.GetString(decodedBytes);
-            var file = json.DeserializeFromString<string>(str);
-
-            return await jimakuApiClient.DownloadFileAsync(file);
-        }
 
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request, CancellationToken cancellationToken)
         {
-            var result = new List<RemoteSubtitleInfo>();
-
-            logger.Info(json.SerializeToString(request));
-            var searches = await jimakuApiClient.SearchByTVDB_ID(request, request.ParentIndexNumber);
-
-            List<JimakuFile> files = new List<JimakuFile>();
-            foreach (var search in searches)
+            var tvdb = request.SeriesProviderIds?.FirstOrDefault(p => string.Equals(p.Key, "Tvdb", System.StringComparison.OrdinalIgnoreCase)).Value;
+            var files = await client.SearchAsync(tvdb, request.ParentIndexNumber, request.IndexNumber, request.Language, cancellationToken).ConfigureAwait(false);
+            return files.Select(file => new RemoteSubtitleInfo
             {
-                files.AddRange(await jimakuApiClient.GetFilesFromSearch(search, request.IndexNumber.Value));
-            }
-
-            foreach (var file in files)
+                Id = client.EncodeId(file.Url), Name = file.Name, ProviderName = Name,
+                Language = "jpn", Format = JimakuClient.GetFormat(file.Url)
+            }).ToList();
+        }
+        public async Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
+        {
+            var url = client.DecodeId(id);
+            return new SubtitleResponse
             {
-                var fileExtension = Path.GetExtension(file.Url).TrimStart('.'); // Removes the '.' from extension
-                result.Add(new RemoteSubtitleInfo
-                {
-                    Id = Convert.ToBase64String(Encoding.Unicode.GetBytes(json.SerializeToString(file.Url))),
-                    Name = file.Name,
-                    ProviderName = Plugin.PluginName,
-                    Language = "jpn",
-                    Format = fileExtension
-                });
-            }
-
-
-            logger.Info(json.SerializeToString(result));
-
-            return result;
+                Format = JimakuClient.GetFormat(url), Language = "jpn",
+                Stream = await client.DownloadAsync(url, cancellationToken).ConfigureAwait(false)
+            };
+        }
+        private sealed class JsonCodec : IJsonCodec
+        {
+            private readonly IJsonSerializer json;
+            public JsonCodec(IJsonSerializer json) { this.json = json; }
+            public T Deserialize<T>(string value) => json.DeserializeFromString<T>(value);
+            public string Serialize<T>(T value) => json.SerializeToString(value);
         }
     }
 }

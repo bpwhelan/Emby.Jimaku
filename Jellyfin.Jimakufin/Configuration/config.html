@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><title>Jimakufin</title></head>
+<body>
+    <div id="JimakuConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="JimakuConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="JimakuApiKey">Jimaku API key</label>
+                        <input is="emby-input" type="password" id="JimakuApiKey" autocomplete="off" />
+                        <div class="fieldDescription">Enter your API key from your Jimaku.cc account settings. Enable Jimakufin and Japanese subtitles in your library settings.</div>
+                    </div>
+                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '7fafdaef-3f55-4fd7-b14d-bbfcdaa801ee';
+                var page = document.querySelector('#JimakuConfigPage');
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        page.querySelector('#JimakuApiKey').value = config.ApiKey || '';
+                        Dashboard.hideLoadingMsg();
+                    }).catch(function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('Unable to load Jimaku settings.');
+                    });
+                });
+                page.querySelector('#JimakuConfigForm').addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.ApiKey = page.querySelector('#JimakuApiKey').value.trim();
+                        return ApiClient.updatePluginConfiguration(pluginId, config);
+                    }).then(Dashboard.processPluginConfigurationUpdateResult).catch(function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('Unable to save Jimaku settings.');
+                    });
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
+
