@@ -1,13 +1,9 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Emby.Jimaku", "Emby.Jimaku.csproj", "{1E2052F1-17BE-4520-BFE1-8C59E2A3771A}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{4F52FD11-658E-A102-6CD3-7D7C16FFA15B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jimaku.Shared", "Shared\Jimaku.Shared.csproj", "{C94537D8-9F55-489F-9C4B-C8D21BE437C0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Jimakufin", "Jellyfin.Jimakufin\Jellyfin.Jimakufin.csproj", "{3D08BB17-1C65-4015-A04C-C19A36FEFBCF}"
 EndProject
@@ -37,18 +33,6 @@ Global
 		{1E2052F1-17BE-4520-BFE1-8C59E2A3771A}.Release|x64.Build.0 = Release|Any CPU
 		{1E2052F1-17BE-4520-BFE1-8C59E2A3771A}.Release|x86.ActiveCfg = Release|Any CPU
 		{1E2052F1-17BE-4520-BFE1-8C59E2A3771A}.Release|x86.Build.0 = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|x64.Build.0 = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Debug|x86.Build.0 = Debug|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|x64.ActiveCfg = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|x64.Build.0 = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|x86.ActiveCfg = Release|Any CPU
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0}.Release|x86.Build.0 = Release|Any CPU
 		{3D08BB17-1C65-4015-A04C-C19A36FEFBCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3D08BB17-1C65-4015-A04C-C19A36FEFBCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D08BB17-1C65-4015-A04C-C19A36FEFBCF}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -78,7 +62,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{C94537D8-9F55-489F-9C4B-C8D21BE437C0} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
 		{CAD584A2-99CB-4465-8A4E-8DE4B305961F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

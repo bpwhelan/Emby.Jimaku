@@ -4,7 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
+using Codec = Jellyfin.Jimakufin.JsonCodec;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Jimaku.Model;
@@ -13,12 +13,6 @@ using Xunit;
 
 public class JimakuClientTests
 {
-    private sealed class Codec : IJsonCodec
-    {
-        public T Deserialize<T>(string value) => JsonSerializer.Deserialize<T>(value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        public string Serialize<T>(T value) => JsonSerializer.Serialize(value);
-    }
-
     private sealed class Handler : HttpMessageHandler
     {
         public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> Respond { get; set; }
@@ -26,6 +20,33 @@ public class JimakuClientTests
     }
 
     private static HttpResponseMessage Json(string value) => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(value) };
+
+    [Fact]
+    public async Task UnrelatedMultiValueIdsDoNotBlockRentAGirlfriendSeasonFour()
+    {
+        // Record 6367 from Anime-IDs contains a comma-separated MAL ID, unrelated to this series.
+        // Set JIMAKU_TEST_MAPPINGS to a downloaded dataset to run the same scenario against it.
+        var datasetPath = Environment.GetEnvironmentVariable("JIMAKU_TEST_MAPPINGS");
+        var mappings = string.IsNullOrEmpty(datasetPath)
+            ? "{\"6367\":{\"tvdb_id\":79414,\"tvdb_season\":1,\"tvdb_epoffset\":0,\"anilist_id\":4382,\"mal_id\":\"849,4382\"},\"rent4\":{\"tvdb_id\":380654,\"tvdb_season\":4,\"tvdb_epoffset\":0,\"mal_id\":59277,\"anilist_id\":179344}}"
+            : File.ReadAllText(datasetPath);
+        var apiCalls = 0;
+        using var http = new HttpClient(new Handler { Respond = (request, _) =>
+        {
+            if (request.RequestUri.Host == "raw.githubusercontent.com") return Task.FromResult(Json(mappings));
+            apiCalls++;
+            if (apiCalls == 1)
+            {
+                Assert.EndsWith("entries/search?anilist_id=179344", request.RequestUri.AbsoluteUri);
+                return Task.FromResult(Json("[{\"id\":123}]"));
+            }
+            Assert.EndsWith("entries/123/files?episode=5", request.RequestUri.AbsoluteUri);
+            return Task.FromResult(Json("[{\"name\":\"episode05.ass\",\"url\":\"https://jimaku.cc/episode05.ass\"}]"));
+        }});
+        var files = await new JimakuClient(http, new Codec(), () => "test-key").SearchAsync("380654", 4, 5, "jpn", default);
+        Assert.Equal("episode05.ass", Assert.Single(files).Name);
+        Assert.Equal(2, apiCalls);
+    }
 
     [Fact]
     public async Task SearchMapsSeriesAndAdjustsEpisodeOffsetAndUsesCurrentKey()
@@ -121,6 +142,47 @@ public class JimakuClientTests
         using var http = new HttpClient(new Handler { Respond = (_, _) => Task.FromResult(Json("{\"unmapped\":{\"tvdb_id\":null,\"tvdb_season\":null,\"tvdb_epoffset\":0,\"anilist_id\":123}}")) });
         var client = new JimakuClient(http, new Codec(), () => "key");
         Assert.Empty(await client.SearchAsync("42", 1, 1, "jpn", default));
+    }
+
+    [Fact]
+    public async Task DiagnosticsExplainMissingSeriesIdWithoutExposingApiKey()
+    {
+        var messages = new List<string>();
+        using var http = new HttpClient(new Handler { Respond = (_, _) => throw new Exception("Unexpected network call") });
+        var client = new JimakuClient(http, new Codec(), () => "secret-api-key", messages.Add);
+        Assert.Empty(await client.SearchAsync(null, 1, 1, "jpn", default));
+        Assert.Contains(messages, message => message.Contains("parent series has no valid TVDB ID"));
+        Assert.DoesNotContain(messages, message => message.Contains("secret-api-key"));
+    }
+
+    [Fact]
+    public async Task DiagnosticsReportHttpStatusBeforeAuthenticationFailure()
+    {
+        var messages = new List<string>();
+        using var http = new HttpClient(new Handler { Respond = (request, _) => Task.FromResult(
+            request.RequestUri.Host == "jimaku.cc"
+                ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                : Json("{\"1\":{\"tvdb_id\":42,\"tvdb_season\":1,\"tvdb_epoffset\":0,\"anilist_id\":10}}")) });
+        var client = new JimakuClient(http, new Codec(), () => "secret-api-key", messages.Add);
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.SearchAsync("42", 1, 1, "jpn", default));
+        Assert.Contains(messages, message => message.Contains("Mapped TVDB 42"));
+        Assert.Contains(messages, message => message.Contains("HTTP 401"));
+        Assert.DoesNotContain(messages, message => message.Contains("secret-api-key"));
+    }
+
+    [Fact]
+    public async Task DiagnosticsDistinguishNoMappingFromNoJimakuEntries()
+    {
+        var messages = new List<string>();
+        using var http = new HttpClient(new Handler { Respond = (request, _) => Task.FromResult(Json(
+            request.RequestUri.Host == "jimaku.cc" ? "[]" : "{\"1\":{\"tvdb_id\":42,\"tvdb_season\":1,\"tvdb_epoffset\":0,\"anilist_id\":10}}")) });
+        var client = new JimakuClient(http, new Codec(), () => "key", messages.Add);
+        Assert.Empty(await client.SearchAsync("99", 1, 1, "jpn", default));
+        Assert.Contains(messages, message => message.Contains("No AniList mapping"));
+        messages.Clear();
+        Assert.Empty(await client.SearchAsync("42", 1, 1, "jpn", default));
+        Assert.Contains(messages, message => message.Contains("Jimaku returned 0 entries"));
+        Assert.DoesNotContain(messages, message => message.Contains("No AniList mapping"));
     }
 
     [Fact]

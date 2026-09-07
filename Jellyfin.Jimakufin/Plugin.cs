@@ -4,6 +4,7 @@ using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Jimakufin
 {
@@ -14,7 +15,12 @@ namespace Jellyfin.Jimakufin
 
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public Plugin(IApplicationPaths paths, IXmlSerializer serializer) : base(paths, serializer) { Instance = this; }
+        public Plugin(IApplicationPaths paths, IXmlSerializer serializer, ILogger<Plugin> logger) : base(paths, serializer)
+        {
+            Instance = this;
+            logger.LogInformation("Jimakufin Jellyfin plugin {Version} loaded (single DLL); API key configured: {HasApiKey}",
+                typeof(Plugin).Assembly.GetName().Version, !string.IsNullOrWhiteSpace(Configuration.ApiKey));
+        }
         public static Plugin Instance { get; private set; }
         public override string Name => "Jimakufin";
         public override string Description => "Japanese episode subtitles from Jimaku.cc";

@@ -12,6 +12,7 @@ namespace Emby.Jimaku
     using MediaBrowser.Model.Plugins;
     using System;
     using System.IO;
+    using System.Reflection;
 
     /// <summary>
     /// The plugin.
@@ -35,6 +36,9 @@ namespace Emby.Jimaku
             this.applicationHost = applicationHost;
             this.logger = logManager.GetLogger(this.Name);
             Plugin.Options = GetOptions();
+            this.logger.Info("Jimakufin Emby plugin {0} loaded (single DLL); API key configured: {1}",
+                typeof(Plugin).Assembly.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion,
+                !string.IsNullOrWhiteSpace(Plugin.Options?.ApiKey));
         }
 
         /// <summary>Gets the description.</summary>

@@ -1,0 +1,7 @@
+<Project>
+  <!-- Compile the common code into each host assembly. No Jimaku.Shared.dll is deployed. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)JimakuClient.cs" Link="Shared/JimakuClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../Model/*.cs" Link="Model/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,38 +1,54 @@
-name: .NET
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 9.0.x
-    - name: Build both plugins
-      run: dotnet build Jimakufin.sln -c Release
-    - name: Test shared client
-      run: dotnet test Tests/Jimaku.Tests.csproj -c Release --no-build
-    - name: Package plugins
-      shell: pwsh
-      run: ./scripts/package.ps1 -NoBuild
-    - name: Validate manifest generation
-      shell: pwsh
-      run: ./scripts/update-manifest.ps1 -Repository $env:GITHUB_REPOSITORY -OutputPath artifacts/manifest.json
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Emby.Jimaku
-        path: artifacts/Emby.Jimaku.zip
-        if-no-files-found: error
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Jellyfin.Jimakufin
-        path: |
-          artifacts/Jellyfin.Jimakufin.zip
-          artifacts/manifest.json
-        if-no-files-found: error
+      - uses: actions/checkout@v4
+      - uses: docker://rhysd/actionlint:1.7.12
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Build, package, validate manifest, and test
+        shell: pwsh
+        run: ./scripts/validate.ps1 -Repository $env:GITHUB_REPOSITORY
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: artifacts/test-results/*.trx
+          if-no-files-found: warn
+      - name: Upload verified packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.os }}
+          path: |
+            artifacts/Emby.Jimaku.zip
+            artifacts/Jellyfin.Jimakufin.zip
+            artifacts/manifest.json
+          if-no-files-found: error

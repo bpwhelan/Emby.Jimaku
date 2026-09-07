@@ -5,37 +5,85 @@ on:
     types: [published]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  lint:
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: docker://rhysd/actionlint:1.7.12
+
+  validate:
+    needs: lint
+    if: ${{ !github.event.release.prerelease }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name }}
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
-      - name: Build and test
-        shell: pwsh
-        run: |
-          dotnet build Jimakufin.sln -c Release
-          if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
-          dotnet test Tests/Jimaku.Tests.csproj -c Release --no-build
-          if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
-      - name: Package and generate repository manifest
+          global-json-file: global.json
+      - name: Validate release
         shell: pwsh
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_DATE: ${{ github.event.release.published_at }}
           RELEASE_NOTES: ${{ github.event.release.body }}
-        run: |
-          ./scripts/package.ps1 -NoBuild
-          ./scripts/update-manifest.ps1 -Repository $env:GITHUB_REPOSITORY -Tag $env:RELEASE_TAG -Timestamp $env:RELEASE_DATE -Changelog $env:RELEASE_NOTES -OutputPath artifacts/manifest.json
-      - name: Upload packages and install manifest
+        run: ./scripts/validate.ps1 -Repository $env:GITHUB_REPOSITORY -Tag $env:RELEASE_TAG -Timestamp $env:RELEASE_DATE -Changelog $env:RELEASE_NOTES
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tests-${{ matrix.os }}
+          path: artifacts/test-results/*.trx
+          if-no-files-found: warn
+      - name: Stage verified release assets
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            artifacts/Emby.Jimaku.zip
+            artifacts/Jellyfin.Jimakufin.zip
+            artifacts/manifest.json
+          if-no-files-found: error
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: artifacts
+      # Publish the tested bytes, without rebuilding or overwriting existing assets.
+      - name: Upload plugin packages
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" artifacts/Emby.Jimaku.zip artifacts/Jellyfin.Jimakufin.zip artifacts/manifest.json --clobber
+        run: gh release upload "$RELEASE_TAG" artifacts/Emby.Jimaku.zip artifacts/Jellyfin.Jimakufin.zip
+      - name: Publish manifest after packages are available
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" artifacts/manifest.json
