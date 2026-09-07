@@ -7,13 +7,11 @@ Fetch Japanese episode subtitles from [Jimaku.cc](https://jimaku.cc) in Emby or 
 After the first Jimakufin release is published, open **Dashboard → Plugins → Repositories → Add** and enter:
 
 - **Name:** Jimakufin
-- **Repository URL:** `https://github.com/bpwhelan/Emby.Jimaku/releases/latest/download/manifest.json`
+- **Repository URL:** `https://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json`
 
 Open **Catalog**, install **Jimakufin**, then restart Jellyfin. Enter your API key under **Dashboard → Plugins → Jimakufin** and enable **Jimakufin** with **Japanese** in your TV library's subtitle settings.
 
 The release workflow maintains this manifest alongside the exact ZIP it describes. The URL becomes usable once a release containing these assets exists; checking in the JSON alone does not publish the plugin ZIP.
-
-The GitHub repository is currently named `Emby.Jimaku`. **Jimakufin** is the new project/catalog name. If you rename the GitHub repository to `Jimakufin`, use `https://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json` instead. The workflow derives release URLs from the repository running it.
 
 ## Supported servers
 
