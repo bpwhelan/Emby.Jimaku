@@ -9,11 +9,11 @@
     "versions": [
       {
         "version": "1.0.4.0",
-        "changelog": "Jimakufin now supports Jellyfin 10.11 alongside Emby 4.8.\n\n- Packages each server's plugin as one DLL, with no separate shared library to install.\n- Registers Jimakufin in Jellyfin's subtitle downloader list and enables subtitle searches.\n- Fixes mapping failures caused by comma-separated IDs in unrelated Anime-IDs records.\n- Applies TVDB episode offsets when matching split anime seasons.\n- Adds startup and search diagnostics without logging API keys.\n\nFor Jellyfin, add this plugin repository:\nhttps://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json\n\nAfter installing, restart the server, enter your Jimaku API key, and enable Jimakufin and Japanese subtitles in your TV library settings. Matching requires a TVDB ID on the parent series.\n\nWhen upgrading from a test build, stop the server and move the old plugin DLLs/folders and Jimaku.Shared.dll out of its plugin directory before installing. Keep your configuration XML files. The included Emby plugin remains version 1.0.2; the Jellyfin plugin is version 1.0.4.\n",
+        "changelog": "Jimakufin now supports Jellyfin 10.11 alongside Emby 4.8.\r\n\r\n- Packages each server's plugin as one DLL, with no separate shared library to install.\r\n- Registers Jimakufin in Jellyfin's subtitle downloader list and enables subtitle searches.\r\n- Fixes mapping failures caused by comma-separated IDs in unrelated Anime-IDs records.\r\n- Applies TVDB episode offsets when matching split anime seasons.\r\n- Adds startup and search diagnostics without logging API keys.\r\n\r\nFor Jellyfin, add this plugin repository:\r\nhttps://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json\r\n\r\nAfter installing, restart the server, enter your Jimaku API key, and enable Jimakufin and Japanese subtitles in your TV library settings. Matching requires a TVDB ID on the parent series.\r\n\r\nWhen upgrading from a test build, stop the server and move the old plugin DLLs/folders and Jimaku.Shared.dll out of its plugin directory before installing. Keep your configuration XML files. The included Emby plugin remains version 1.0.2; the Jellyfin plugin is version 1.0.4.\r\n",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/bpwhelan/Jimakufin/releases/download/v1.0.4/Jellyfin.Jimakufin.zip",
-        "checksum": "84acfab8418dd95b146da4a2fbaf09d4",
-        "timestamp": "2026-09-07T21:00:32Z"
+        "checksum": "78c8162d730e468fac9a2406c2fe86e7",
+        "timestamp": "2026-09-07T21:05:25Z"
       },
       {
         "version": "1.0.1.0",
