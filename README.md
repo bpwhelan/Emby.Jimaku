@@ -2,6 +2,8 @@
 
 Fetch Japanese episode subtitles from [Jimaku.cc](https://jimaku.cc) in Emby or Jellyfin.
 
+Jellyfin is very recent, and extremely vibe coded (the original emby plugin was not), so it may not work properly...
+
 ## Install from the Jellyfin catalog
 
 After the first Jimakufin release is published, open **Dashboard → Plugins → Repositories → Add** and enter:
