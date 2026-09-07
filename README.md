@@ -7,7 +7,11 @@ Fetch Japanese episode subtitles from [Jimaku.cc](https://jimaku.cc) in Emby or 
 After the first Jimakufin release is published, open **Dashboard → Plugins → Repositories → Add** and enter:
 
 - **Name:** Jimakufin
-- **Repository URL:** `https://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json`
+- **Repository URL:** 
+
+```
+https://github.com/bpwhelan/Jimakufin/releases/latest/download/manifest.json
+```
 
 Open **Catalog**, install **Jimakufin**, then restart Jellyfin. Enter your API key under **Dashboard → Plugins → Jimakufin** and enable **Jimakufin** with **Japanese** in your TV library's subtitle settings.
 
